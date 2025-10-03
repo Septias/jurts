@@ -1,12 +1,20 @@
-use crate::camera_controllers::{CameraController, CameraControllerPlugin};
-use bevy::{color::palettes::tailwind::*, picking::pointer::PointerInteraction, prelude::*};
+use crate::camera_controllers::{CameraController, CameraControllerPlugin, orbit};
+use bevy::{
+    color::palettes::tailwind::*, dev_tools::fps_overlay::FpsOverlayPlugin,
+    picking::pointer::PointerInteraction, prelude::*,
+};
 mod camera_controllers;
 
 fn main() {
     App::new()
-        .add_plugins((DefaultPlugins, CameraControllerPlugin, MeshPickingPlugin))
+        .add_plugins((
+            DefaultPlugins,
+            CameraControllerPlugin,
+            MeshPickingPlugin,
+            FpsOverlayPlugin::default(),
+        ))
         .add_systems(Startup, setup)
-        .add_systems(Update, (draw_mesh_intersections, rotate))
+        .add_systems(Update, (draw_mesh_intersections, rotate, orbit))
         .run();
 }
 
@@ -37,15 +45,20 @@ fn setup(
     // cube
     commands
         .spawn((
-            Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0))),
-            MeshMaterial3d(materials.add(Color::srgb(0.8, 0.7, 0.6))),
+            Mesh3d(meshes.add(Plane3d::new(Vec3::new(0., 0., 1.), Vec2::splat(1.65 / 2.0)))),
+            MeshMaterial3d(materials.add(StandardMaterial {
+                base_color: Color::srgb(0.8, 0., 0.6),
+                cull_mode: None,
+                double_sided: true,
+                ..Default::default()
+            })),
             Transform::from_xyz(0.0, 0.5, 0.0),
             Shape,
         ))
-        .observe(update_material_on::<Pointer<Over>>(hover_matl.clone()))
-        .observe(update_material_on::<Pointer<Out>>(white_matl.clone()))
-        .observe(update_material_on::<Pointer<Press>>(pressed_matl.clone()))
-        .observe(update_material_on::<Pointer<Release>>(hover_matl.clone()))
+        // .observe(update_material_on::<Pointer<Over>>(hover_matl.clone()))
+        // .observe(update_material_on::<Pointer<Out>>(white_matl.clone()))
+        // .observe(update_material_on::<Pointer<Press>>(pressed_matl.clone()))
+        // .observe(update_material_on::<Pointer<Release>>(hover_matl.clone()))
         .observe(rotate_on_drag);
     // light
     commands.spawn((
