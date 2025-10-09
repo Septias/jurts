@@ -18,7 +18,7 @@ fn main() {
             FpsOverlayPlugin::default(),
         ))
         .add_systems(Startup, setup)
-        .add_systems(Update, (draw_mesh_intersections, rotate, orbit))
+        .add_systems(Update, (draw_mesh_intersections, orbit))
         .run();
 }
 
@@ -31,11 +31,6 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let white_matl = materials.add(Color::WHITE);
-    let ground_matl = materials.add(Color::from(GRAY_300));
-    let hover_matl = materials.add(Color::from(CYAN_300));
-    let pressed_matl = materials.add(Color::from(YELLOW_300));
-
     commands.spawn((
         Camera3d::default(),
         Transform::from_xyz(0., 1.5, 6.).looking_at(Vec3::ZERO, Vec3::Y),
@@ -46,24 +41,7 @@ fn setup(
         Mesh3d(meshes.add(Plane3d::default().mesh().size(5.0, 5.0))),
         MeshMaterial3d(materials.add(Color::srgb(0.3, 0.5, 0.3))),
     ));
-    // cube
-    commands
-        .spawn((
-            Mesh3d(meshes.add(Plane3d::new(Vec3::new(0., 0., 1.), Vec2::splat(1.65 / 2.0)))),
-            MeshMaterial3d(materials.add(StandardMaterial {
-                base_color: Color::srgb(0.8, 0., 0.6),
-                cull_mode: None,
-                double_sided: true,
-                ..Default::default()
-            })),
-            Transform::from_xyz(0.0, 0.5, 0.0),
-            Shape,
-        ))
         // .observe(update_material_on::<Pointer<Over>>(hover_matl.clone()))
-        // .observe(update_material_on::<Pointer<Out>>(white_matl.clone()))
-        // .observe(update_material_on::<Pointer<Press>>(pressed_matl.clone()))
-        // .observe(update_material_on::<Pointer<Release>>(hover_matl.clone()))
-        .observe(rotate_on_drag);
     // light
     commands.spawn((
         PointLight {
@@ -72,6 +50,8 @@ fn setup(
         },
         Transform::from_xyz(4.0, 8.0, 4.0),
     ));
+
+    // draw centeroid jurt.
     create_prisma(commands, meshes, materials, 8, 1.65, 2., Vec3::ZERO);
 }
 
@@ -98,18 +78,4 @@ fn draw_mesh_intersections(pointers: Query<&PointerInteraction>, mut gizmos: Giz
         gizmos.sphere(point, 0.05, RED_500);
         gizmos.arrow(point, point + normal.normalize() * 0.5, PINK_100);
     }
-}
-
-/// A system that rotates all shapes.
-fn rotate(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
-    for mut transform in &mut query {
-        transform.rotate_y(time.delta_secs() / 2.);
-    }
-}
-
-/// An observer to rotate an entity when it is dragged
-fn rotate_on_drag(drag: On<Pointer<Drag>>, mut transforms: Query<&mut Transform>) {
-    let mut transform = transforms.get_mut(drag.entity).unwrap();
-    transform.rotate_y(drag.delta.x * 0.02);
-    transform.rotate_x(drag.delta.y * 0.02);
 }
