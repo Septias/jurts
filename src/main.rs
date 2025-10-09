@@ -1,9 +1,13 @@
-use crate::camera_controllers::{CameraController, CameraControllerPlugin, orbit};
+use crate::{
+    camera_controllers::{CameraController, CameraControllerPlugin, orbit},
+    meshes::create_prisma,
+};
 use bevy::{
     color::palettes::tailwind::*, dev_tools::fps_overlay::FpsOverlayPlugin,
     picking::pointer::PointerInteraction, prelude::*,
 };
 mod camera_controllers;
+mod meshes;
 
 fn main() {
     App::new()
@@ -68,6 +72,7 @@ fn setup(
         },
         Transform::from_xyz(4.0, 8.0, 4.0),
     ));
+    create_prisma(commands, meshes, materials, 8, 1.65, 2., Vec3::ZERO);
 }
 
 /// Returns an observer that updates the entity's material to the one specified.
