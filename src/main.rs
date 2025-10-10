@@ -52,7 +52,7 @@ fn setup(
     ));
 
     // draw centeroid jurt.
-    create_prisma(commands, meshes, materials, 8, 1.65, 2., Vec3::ZERO);
+    create_prisma(commands, meshes, materials, 8, 1.65, 2., 1.0, Vec3::ZERO);
 }
 
 /// Returns an observer that updates the entity's material to the one specified.
