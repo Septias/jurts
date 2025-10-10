@@ -13,7 +13,7 @@ fn main() {
     App::new()
         .add_plugins((
             DefaultPlugins,
-            CameraControllerPlugin,
+            // CameraControllerPlugin,
             MeshPickingPlugin,
             FpsOverlayPlugin::default(),
         ))

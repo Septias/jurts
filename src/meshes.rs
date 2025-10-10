@@ -21,7 +21,7 @@ pub(crate) fn create_prisma(
 ) {
     let angle_step = 2.0 * PI / num_sides as f32;
     let radius = side_length / (2.0 * (PI / num_sides as f32).sin());
-    let trunk_height = side_length + roof_height + 0.5;
+    let trunk_height = side_height + roof_height;
 
     // spawn center trunk
     commands
@@ -60,7 +60,7 @@ pub(crate) fn create_prisma(
 
                 // spawn side rod
                 parent.spawn((
-                    Mesh3d(meshes.add(Cylinder::new(0.02, side_length))),
+                    Mesh3d(meshes.add(Cylinder::new(0.02, side_height))),
                     MeshMaterial3d(materials.add(StandardMaterial {
                         base_color: ZINC_400.into(),
                         ..Default::default()
@@ -74,7 +74,7 @@ pub(crate) fn create_prisma(
 
                 // spawn side plane
                 parent.spawn((
-                    Mesh3d(meshes.add(Plane3d::new(Vec3::Z, Vec2::splat(side_length / 2.0)))),
+                    Mesh3d(meshes.add(Plane3d::new(Vec3::Z, Vec2::splat(side_height / 2.0)))),
                     MeshMaterial3d(materials.add(StandardMaterial {
                         base_color: SLATE_900.into(),
                         cull_mode: None,
