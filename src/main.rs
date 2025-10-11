@@ -36,10 +36,11 @@ fn setup(
         Transform::from_xyz(0., 1.5, 6.).looking_at(Vec3::ZERO, Vec3::Y),
         CameraController::default(),
     ));
-    // plane
+    // ground
     commands.spawn((
-        Mesh3d(meshes.add(Plane3d::default().mesh().size(5.0, 5.0))),
+        Mesh3d(meshes.add(Circle::new(7.5))),
         MeshMaterial3d(materials.add(Color::srgb(0.3, 0.5, 0.3))),
+        Transform::default().looking_to(-Vec3::Y, Vec3::X),
     ));
         // .observe(update_material_on::<Pointer<Over>>(hover_matl.clone()))
     // light
