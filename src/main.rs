@@ -40,7 +40,7 @@ fn setup(
 ) {
     commands.spawn((
         Camera3d::default(),
-        Transform::from_xyz(0., 1.5, 6.).looking_at(Vec3::ZERO, Vec3::Y),
+        Transform::from_xyz(0., 10., 10.).looking_at(Vec3::ZERO, Vec3::Y),
         CameraController::default(),
     ));
     // ground

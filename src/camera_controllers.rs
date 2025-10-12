@@ -273,7 +273,6 @@ pub(crate) fn orbit(
     mouse_motion: Res<AccumulatedMouseMotion>,
     mut windows: Query<(&Window, &mut CursorOptions)>,
     mut cursor_grabbed: Local<bool>,
-    time: Res<Time>,
 ) {
     let Ok((mut transform, controller)) = query.single_mut() else {
         return;
@@ -289,7 +288,7 @@ pub(crate) fn orbit(
             }
         }
     }
-    
+
     if mouse_buttons.just_released(MouseButton::Right) {
         *cursor_grabbed = false;
         for (_, mut cursor_options) in &mut windows {
