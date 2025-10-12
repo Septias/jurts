@@ -271,13 +271,39 @@ pub(crate) fn orbit(
     mut query: Query<(&mut Transform, &mut CameraController), With<Camera>>,
     mouse_buttons: Res<ButtonInput<MouseButton>>,
     mouse_motion: Res<AccumulatedMouseMotion>,
+    mut windows: Query<(&Window, &mut CursorOptions)>,
+    mut cursor_grabbed: Local<bool>,
     time: Res<Time>,
 ) {
-    let delta = mouse_motion.delta;
-
     let Ok((mut transform, controller)) = query.single_mut() else {
         return;
     };
+
+    // Handle mouse capture
+    if mouse_buttons.just_pressed(MouseButton::Right) {
+        *cursor_grabbed = true;
+        for (window, mut cursor_options) in &mut windows {
+            if window.focused {
+                cursor_options.grab_mode = CursorGrabMode::Locked;
+                cursor_options.visible = false;
+            }
+        }
+    }
+    
+    if mouse_buttons.just_released(MouseButton::Right) {
+        *cursor_grabbed = false;
+        for (_, mut cursor_options) in &mut windows {
+            cursor_options.grab_mode = CursorGrabMode::None;
+            cursor_options.visible = true;
+        }
+    }
+
+    // Only rotate when mouse is captured
+    if !*cursor_grabbed {
+        return;
+    }
+
+    let delta = mouse_motion.delta;
 
     // Mouse motion is one of the few inputs that should not be multiplied by delta time,
     // as we are already receiving the full movement since the last frame was rendered. Multiplying
