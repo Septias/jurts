@@ -79,7 +79,8 @@ pub struct CameraController {
 
 impl Default for CameraController {
     fn default() -> Self {
-        let pitch_limit = FRAC_PI_2 - 0.01;
+        let max_pitch_limit = -0.1; // Maximum downward angle (keep camera above plane)
+        let min_pitch_limit = -(FRAC_PI_2 - 0.01); // Maximum upward angle
         Self {
             enabled: true,
             initialized: false,
@@ -97,12 +98,12 @@ impl Default for CameraController {
             run_speed: 15.0,
             scroll_factor: 0.1,
             friction: 0.5,
-            pitch: 0.0,
+            pitch: -0.3,
             yaw: 0.0,
             velocity: Vec3::ZERO,
             orbit_distance: 20.0,
             pitch_speed: 0.003,
-            pitch_range: -pitch_limit..pitch_limit,
+            pitch_range: min_pitch_limit..max_pitch_limit,
             roll_speed: 1.0,
             yaw_speed: 0.004,
         }
@@ -273,18 +274,10 @@ pub(crate) fn orbit(
     time: Res<Time>,
 ) {
     let delta = mouse_motion.delta;
-    let mut delta_roll = 0.0;
 
     let Ok((mut transform, controller)) = query.single_mut() else {
         return;
     };
-
-    if mouse_buttons.pressed(MouseButton::Left) {
-        delta_roll -= 1.0;
-    }
-    if mouse_buttons.pressed(MouseButton::Right) {
-        delta_roll += 1.0;
-    }
 
     // Mouse motion is one of the few inputs that should not be multiplied by delta time,
     // as we are already receiving the full movement since the last frame was rendered. Multiplying
@@ -292,16 +285,12 @@ pub(crate) fn orbit(
     let delta_pitch = delta.y * controller.pitch_speed;
     let delta_yaw = delta.x * controller.yaw_speed;
 
-    // Conversely, we DO need to factor in delta time for mouse button inputs.
-    delta_roll *= controller.roll_speed * time.delta_secs();
-
     // Obtain the existing pitch, yaw, and roll values from the transform.
     let (yaw, pitch, roll) = transform.rotation.to_euler(EulerRot::YXZ);
 
     // Establish the new yaw and pitch, preventing the pitch value from exceeding our limits.
     let pitch =
         (pitch + delta_pitch).clamp(controller.pitch_range.start, controller.pitch_range.end);
-    let roll = roll + delta_roll;
     let yaw = yaw + delta_yaw;
     transform.rotation = Quat::from_euler(EulerRot::YXZ, yaw, pitch, roll);
 
