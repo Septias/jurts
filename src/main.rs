@@ -1,23 +1,27 @@
 use crate::{
-    camera_controllers::{CameraController, CameraControllerPlugin, orbit},
+    camera_controllers::{CameraController, orbit},
     meshes::create_prisma,
+    ui::setup_ui,
 };
 use bevy::{
     color::palettes::tailwind::*, dev_tools::fps_overlay::FpsOverlayPlugin,
+    feathers::FeathersPlugins,
     picking::pointer::PointerInteraction, prelude::*,
 };
 mod camera_controllers;
 mod meshes;
+mod ui;
 
 fn main() {
     App::new()
         .add_plugins((
             DefaultPlugins,
+            FeathersPlugins,
             // CameraControllerPlugin,
             MeshPickingPlugin,
             FpsOverlayPlugin::default(),
         ))
-        .add_systems(Startup, setup)
+        .add_systems(Startup, (setup, setup_ui))
         .add_systems(Update, (draw_mesh_intersections, orbit))
         .run();
 }
