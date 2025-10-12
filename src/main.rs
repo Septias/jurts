@@ -21,7 +21,7 @@ fn main() {
             FeathersPlugins,
             // CameraControllerPlugin,
             MeshPickingPlugin,
-            FpsOverlayPlugin::default(),
+            // FpsOverlayPlugin::default(),
         ))
         .insert_resource(UiTheme(create_dark_theme()))
         .add_systems(Startup, (setup, setup_ui))
