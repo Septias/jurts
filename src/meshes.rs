@@ -1,12 +1,12 @@
 use bevy::{
     asset::RenderAssetUsages,
-    color::palettes::tailwind::{SLATE_900, YELLOW_800, ZINC_400},
+    color::palettes::tailwind::{GRAY_300, SLATE_400, SLATE_900, YELLOW_800, ZINC_400},
     mesh::{Indices, PrimitiveTopology},
     prelude::*,
 };
 use std::f32::consts::PI;
 
-use crate::Shape;
+use crate::{Shape, update_material_on};
 
 /// Spawns a prisma with [num_sides] sides that have a length of [side_length].
 pub(crate) fn create_prisma(
@@ -22,6 +22,22 @@ pub(crate) fn create_prisma(
     let angle_step = 2.0 * PI / num_sides as f32;
     let radius = side_length / (2.0 * (PI / num_sides as f32).sin());
     let trunk_height = side_height + roof_height + 0.5;
+    let hover_mat = materials.add(StandardMaterial {
+        base_color: SLATE_400.into(),
+        cull_mode: None,
+        double_sided: true,
+        ..Default::default()
+    });
+    let standart_mat = materials.add(StandardMaterial {
+        base_color: SLATE_900.into(),
+        cull_mode: None,
+        double_sided: true,
+        ..Default::default()
+    });
+    let rot_material = materials.add(StandardMaterial {
+        base_color: ZINC_400.into(),
+        ..Default::default()
+    });
 
     // spawn center trunk
     commands.spawn((
@@ -45,16 +61,12 @@ pub(crate) fn create_prisma(
             center.y,
             radius * next_angle.sin(),
         );
-
         // spawn side rod
         commands.spawn((
             Mesh3d(meshes.add(Cylinder::new(0.02, side_height))),
-            MeshMaterial3d(materials.add(StandardMaterial {
-                base_color: ZINC_400.into(),
-                ..Default::default()
-            })),
-            Shape,
+            MeshMaterial3d(rot_material.clone()),
             Transform::from_translation(pos1 + Vec3::new(0., side_height / 2.0, 0.)),
+            Shape,
         ));
 
         let plane_center = (pos1 + pos2) / 2.0;
@@ -90,16 +102,14 @@ pub(crate) fn create_prisma(
         .with_inserted_indices(Indices::U32(vec![0, 3, 1, 1, 3, 2]));
 
         // spawn side plane
-        commands.spawn((
-            Mesh3d(meshes.add(mesh)),
-            MeshMaterial3d(materials.add(StandardMaterial {
-                base_color: SLATE_900.into(),
-                cull_mode: None,
-                double_sided: true,
-                ..Default::default()
-            })),
-            Shape,
-        ));
+        commands
+            .spawn((
+                Mesh3d(meshes.add(mesh)),
+                MeshMaterial3d(standart_mat.clone()),
+                Shape,
+            ))
+            .observe(update_material_on::<Pointer<Over>>(hover_mat.clone()))
+            .observe(update_material_on::<Pointer<Out>>(standart_mat.clone()));
 
         // spawn head plane
         let pos1 = Vec3::new(radius * angle.cos(), side_height, radius * angle.sin());
@@ -165,16 +175,14 @@ pub(crate) fn create_prisma(
             1, 3, 2,
         ]));
 
-        commands.spawn((
-            Mesh3d(meshes.add(mesh)),
-            MeshMaterial3d(materials.add(StandardMaterial {
-                base_color: SLATE_900.into(),
-                cull_mode: None,
-                double_sided: true,
-                ..Default::default()
-            })),
-            Shape,
-            Transform::from_translation(mesh_center),
-        ));
+        commands
+            .spawn((
+                Mesh3d(meshes.add(mesh)),
+                MeshMaterial3d(standart_mat.clone()),
+                Shape,
+                Transform::from_translation(mesh_center),
+            ))
+            .observe(update_material_on::<Pointer<Over>>(hover_mat.clone()))
+            .observe(update_material_on::<Pointer<Out>>(standart_mat.clone()));
     }
 }

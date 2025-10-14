@@ -47,7 +47,6 @@ fn setup(
         MeshMaterial3d(materials.add(Color::srgb(0.3, 0.5, 0.3))),
         Transform::default().looking_to(-Vec3::Y, Vec3::X),
     ));
-        // .observe(update_material_on::<Pointer<Over>>(hover_matl.clone()))
     // light
     commands.spawn((
         PointLight {
