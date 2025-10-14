@@ -28,7 +28,7 @@ fn ui_root() -> impl Bundle {
     (
         Node {
             width: percent(100),
-            height: percent(100),
+            height: percent(10),
             align_items: AlignItems::Start,
             justify_content: JustifyContent::SpaceBetween,
             display: Display::Flex,

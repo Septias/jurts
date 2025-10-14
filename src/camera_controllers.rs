@@ -68,7 +68,6 @@ pub(crate) fn orbit(
         }
     }
 
-    println!("{scroll_amount}");
     // Only rotate when mouse is captured
     if !*cursor_grabbed && scroll_amount == 0. {
         return;

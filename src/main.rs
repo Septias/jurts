@@ -18,8 +18,8 @@ fn main() {
         .add_plugins((
             DefaultPlugins,
             FeathersPlugins,
-            // CameraControllerPlugin,
             MeshPickingPlugin,
+            // CameraControllerPlugin,
             // FpsOverlayPlugin::default(),
         ))
         .insert_resource(UiTheme(create_dark_theme()))
