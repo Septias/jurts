@@ -1,6 +1,6 @@
 use bevy::{
     asset::RenderAssetUsages,
-    color::palettes::tailwind::{RED_300, SLATE_900, YELLOW_800, ZINC_400},
+    color::palettes::tailwind::{SLATE_900, YELLOW_800, ZINC_400},
     mesh::{Indices, PrimitiveTopology},
     prelude::*,
 };
@@ -21,7 +21,7 @@ pub(crate) fn create_prisma(
 ) {
     let angle_step = 2.0 * PI / num_sides as f32;
     let radius = side_length / (2.0 * (PI / num_sides as f32).sin());
-    let trunk_height = side_height + roof_height;
+    let trunk_height = side_height + roof_height + 0.5;
 
     // spawn center trunk
     commands.spawn((

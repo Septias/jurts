@@ -1,14 +1,13 @@
 use bevy::{
-    color::palettes::tailwind::GRAY_400,
     feathers::{
         controls::{ButtonProps, ButtonVariant, button},
-        rounded_corners::RoundedCorners,
         theme::ThemedText,
     },
     prelude::*,
     ui_widgets::{Activate, observe},
 };
 
+#[allow(unused)]
 #[derive(Component)]
 pub struct CameraControlButton {
     pub axis: CameraAxis,
@@ -20,9 +19,6 @@ pub enum CameraAxis {
     Y,
     Z,
 }
-
-#[derive(Component)]
-pub struct DrawerButton;
 
 pub fn setup_ui(mut commands: Commands) {
     commands.spawn(ui_root());

@@ -5,7 +5,6 @@ use crate::{
 };
 use bevy::{
     color::palettes::tailwind::*,
-    dev_tools::fps_overlay::FpsOverlayPlugin,
     feathers::{FeathersPlugins, dark_theme::create_dark_theme, theme::UiTheme},
     picking::pointer::PointerInteraction,
     prelude::*,
@@ -43,7 +42,6 @@ fn setup(
         Transform::from_xyz(0., 10., 10.).looking_at(Vec3::ZERO, Vec3::Y),
         CameraController::default(),
     ));
-    // ground
     commands.spawn((
         Mesh3d(meshes.add(Circle::new(7.5))),
         MeshMaterial3d(materials.add(Color::srgb(0.3, 0.5, 0.3))),
