@@ -1,6 +1,6 @@
 use bevy::{
     asset::RenderAssetUsages,
-    color::palettes::tailwind::{GRAY_300, SLATE_400, SLATE_900, YELLOW_800, ZINC_400},
+    color::palettes::tailwind::{SLATE_400, SLATE_900, YELLOW_800, ZINC_400},
     mesh::{Indices, PrimitiveTopology},
     prelude::*,
 };
