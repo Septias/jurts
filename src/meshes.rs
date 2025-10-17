@@ -8,6 +8,68 @@ use std::f32::consts::PI;
 
 use crate::{Shape, update_material_on};
 
+/// Creates a standard rectangular plane facing the Z axis with pos1 at (0,0,0)
+fn create_standard_rect_plane(width: f32, height: f32) -> Mesh {
+    Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::default(),
+    )
+    .with_inserted_attribute(
+        Mesh::ATTRIBUTE_POSITION,
+        vec![
+            [-width / 2.0, 0.0, 0.0],    // bottom-left
+            [width / 2.0, 0.0, 0.0],     // bottom-right
+            [width / 2.0, height, 0.0],  // top-right
+            [-width / 2.0, height, 0.0], // top-left
+        ],
+    )
+    .with_inserted_attribute(
+        Mesh::ATTRIBUTE_UV_0,
+        vec![[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]],
+    )
+    .with_inserted_attribute(
+        Mesh::ATTRIBUTE_NORMAL,
+        vec![
+            [0.0, 0.0, 1.0],
+            [0.0, 0.0, 1.0],
+            [0.0, 0.0, 1.0],
+            [0.0, 0.0, 1.0],
+        ],
+    )
+    .with_inserted_indices(Indices::U32(vec![0, 1, 2, 0, 2, 3]))
+}
+
+/// Creates a standard trapezoidal plane facing the Z axis with pos1 at (0,0,0)
+fn create_standard_trapezoid_plane(bottom_width: f32, p1p4: Vec3, p2p3: Vec3) -> Mesh {
+    Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::default(),
+    )
+    .with_inserted_attribute(
+        Mesh::ATTRIBUTE_POSITION,
+        vec![
+            [-bottom_width / 2.0, 0.0, 0.0],                // bottom-left (p1)
+            [bottom_width / 2.0, 0.0, 0.0],                 // bottom-right (p2)
+            [bottom_width / 2.0 + p2p3.x, p2p3.y, p2p3.z],  // top-right (p3)
+            [-bottom_width / 2.0 + p1p4.x, p1p4.y, p1p4.z], // top-left (p4)
+        ],
+    )
+    .with_inserted_attribute(
+        Mesh::ATTRIBUTE_UV_0,
+        vec![[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]],
+    )
+    .with_inserted_attribute(
+        Mesh::ATTRIBUTE_NORMAL,
+        vec![
+            [0.0, 0.0, 1.0],
+            [0.0, 0.0, 1.0],
+            [0.0, 0.0, 1.0],
+            [0.0, 0.0, 1.0],
+        ],
+    )
+    .with_inserted_indices(Indices::U32(vec![0, 1, 2, 0, 2, 3]))
+}
+
 /// Spawns a prisma with [num_sides] sides that have a length of [side_length].
 pub(crate) fn create_prisma(
     mut commands: Commands,
@@ -70,43 +132,30 @@ pub(crate) fn create_prisma(
         ));
 
         let plane_center = (pos1 + pos2) / 2.0;
-        let face_normal = center - plane_center; // TODO: revert this as soon as picking works from both sides
+        let side_length_actual = pos1.distance(pos2);
 
-        let mesh = Mesh::new(
-            PrimitiveTopology::TriangleList,
-            RenderAssetUsages::default(),
-        )
-        .with_inserted_attribute(
-            Mesh::ATTRIBUTE_POSITION,
-            vec![
-                pos1,
-                pos2,
-                pos2 + Vec3::new(0., side_height, 0.),
-                pos1 + Vec3::new(0., side_height, 0.),
-            ],
-        )
-        .with_inserted_attribute(
-            Mesh::ATTRIBUTE_UV_0,
-            vec![[0.0, 1.0], [0.5, 0.0], [1.0, 0.0], [0.5, 1.0]],
-        )
-        // Assign proper face normal to all vertices
-        .with_inserted_attribute(
-            Mesh::ATTRIBUTE_NORMAL,
-            vec![
-                face_normal.to_array(),
-                face_normal.to_array(),
-                face_normal.to_array(),
-                face_normal.to_array(),
-            ],
-        )
-        .with_inserted_indices(Indices::U32(vec![0, 3, 1, 1, 3, 2]));
+        // Create transform: position at plane center, rotate to face outward
+        let up = Vec3::Y;
+        let forward = (center - plane_center).normalize(); // Face inward toward center
+        let right = up.cross(forward).normalize();
+        let corrected_up = forward.cross(right);
+
+        let rotation_matrix = Mat3::from_cols(right, corrected_up, forward);
+        let rotation = Quat::from_mat3(&rotation_matrix);
+
+        let transform = Transform {
+            translation: plane_center,
+            rotation,
+            scale: Vec3::ONE,
+        };
 
         // spawn side plane
         commands
             .spawn((
-                Mesh3d(meshes.add(mesh)),
+                Mesh3d(meshes.add(create_standard_rect_plane(side_length_actual, side_height))),
                 MeshMaterial3d(standart_mat.clone()),
                 Shape,
+                transform,
             ))
             .observe(update_material_on::<Pointer<Over>>(hover_mat.clone()))
             .observe(update_material_on::<Pointer<Out>>(standart_mat.clone()));
@@ -118,7 +167,7 @@ pub(crate) fn create_prisma(
             side_height,
             radius * next_angle.sin(),
         );
-        let radius_inner = radius * 0.2; // Make inner radius 70% of outer radius
+        let radius_inner = radius * 0.2; // Make inner radius 20% of outer radius
 
         let pos3 = Vec3::new(
             radius_inner * angle.cos(),
