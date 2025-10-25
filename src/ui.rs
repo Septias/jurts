@@ -1,3 +1,4 @@
+use crate::EditingMode;
 use bevy::{
     feathers::{
         controls::{ButtonProps, ButtonVariant, button},
@@ -20,8 +21,26 @@ pub enum CameraAxis {
     Z,
 }
 
+#[derive(Component)]
+pub struct EditingModeButton;
+
 pub fn setup_ui(mut commands: Commands) {
     commands.spawn(ui_root());
+}
+
+pub fn update_editing_mode_button_text(
+    editing_mode: Res<EditingMode>,
+    mut query: Query<&mut Text, With<EditingModeButton>>,
+) {
+    if editing_mode.is_changed() {
+        for mut text in query.iter_mut() {
+            text.0 = if editing_mode.is_editing {
+                "Edit Mode: ON".to_string()
+            } else {
+                "Edit Mode: OFF".to_string()
+            };
+        }
+    }
 }
 
 fn ui_root() -> impl Bundle {
@@ -93,20 +112,29 @@ fn ui_root() -> impl Bundle {
                     ),
                 ]
             ),
-            // // Top right - Drawer button
-            // (
-            //     button(
-            //         ButtonProps {
-            //             corners: RoundedCorners::All,
-            //             ..default()
-            //         },
-            //         (DrawerButton, BackgroundColor(GRAY_400.into())),
-            //         Spawn((Text::new("☰"), ThemedText))
-            //     ),
-            //     observe(|_activate: On<Activate>| {
-            //         info!("Drawer button clicked!");
-            //     })
-            // ),
+            // Top right - Editing mode button
+            (
+                Node {
+                    // align_self: AlignSelf::End,
+                    ..Default::default()
+                },
+                children![(
+                    button(
+                        ButtonProps {
+                            variant: ButtonVariant::Normal,
+                            ..default()
+                        },
+                        (EditingModeButton,),
+                        Spawn((Text::new("Edit Mode: OFF"), ThemedText))
+                    ),
+                    observe(
+                        |_activate: On<Activate>, mut editing_mode: ResMut<EditingMode>| {
+                            editing_mode.is_editing = !editing_mode.is_editing;
+                            info!("Editing mode toggled: {}", editing_mode.is_editing);
+                        }
+                    )
+                )]
+            ),
         ],
     )
 }

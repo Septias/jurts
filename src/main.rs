@@ -1,7 +1,7 @@
 use crate::{
     camera_controllers::{CameraController, orbit},
     meshes::create_prisma,
-    ui::setup_ui,
+    ui::{setup_ui, update_editing_mode_button_text},
 };
 use bevy::{
     color::palettes::tailwind::*,
@@ -23,14 +23,20 @@ fn main() {
             // FpsOverlayPlugin::default(),
         ))
         .insert_resource(UiTheme(create_dark_theme()))
+        .init_resource::<EditingMode>()
         .add_systems(Startup, (setup, setup_ui))
-        .add_systems(Update, (draw_mesh_intersections, orbit))
+        .add_systems(Update, (draw_mesh_intersections, orbit, update_editing_mode_button_text))
         .run();
 }
 
 /// A marker component for our shapes so we can query them separately from the ground plane.
 #[derive(Component)]
 struct Shape;
+
+#[derive(Resource, Default)]
+pub struct EditingMode {
+    pub is_editing: bool,
+}
 
 fn setup(
     mut commands: Commands,
