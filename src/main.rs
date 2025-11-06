@@ -25,7 +25,14 @@ fn main() {
         .insert_resource(UiTheme(create_dark_theme()))
         .init_resource::<EditingMode>()
         .add_systems(Startup, (setup, setup_ui))
-        .add_systems(Update, (draw_mesh_intersections, orbit, update_editing_mode_button_text))
+        .add_systems(
+            Update,
+            (
+                draw_mesh_intersections,
+                orbit,
+                update_editing_mode_button_text,
+            ),
+        )
         .run();
 }
 
@@ -63,7 +70,16 @@ fn setup(
     ));
 
     // draw centeroid jurt.
-    create_prisma(commands, meshes, materials, 8, 1.65, 2., 1.0, Vec3::ZERO);
+    create_prisma(
+        commands,
+        meshes,
+        materials,
+        8,
+        1.65,
+        2.,
+        1.0,
+        Vec3::new(2.0, 0.0, 0.0),
+    );
 }
 
 /// Returns an observer that updates the entity's material to the one specified.
