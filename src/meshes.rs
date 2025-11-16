@@ -1,12 +1,15 @@
 use bevy::{
     asset::RenderAssetUsages,
-    color::palettes::tailwind::{SLATE_400, SLATE_900, YELLOW_800, ZINC_400},
+    color::palettes::tailwind::{RED_700, SLATE_400, SLATE_900, YELLOW_800, ZINC_400},
     mesh::{Indices, PrimitiveTopology},
     prelude::*,
 };
 use std::f32::consts::PI;
 
-use crate::{Shape, update_material_on};
+use crate::{
+    Shape,
+    meshes::hover::{on_jurt_hover, on_plane_hover_single},
+};
 
 /// Creates a standard rectangular plane facing the Z axis with pos1 at (0,0,0)
 fn create_standard_rect_plane(width: f32, height: f32) -> Mesh {
@@ -108,12 +111,21 @@ pub(crate) fn create_prisma(
         double_sided: true,
         ..Default::default()
     });
+
     let standart_mat = materials.add(StandardMaterial {
         base_color: SLATE_900.into(),
         cull_mode: None,
         double_sided: true,
         ..Default::default()
     });
+
+    let full_hover_mat = materials.add(StandardMaterial {
+        base_color: RED_700.into(),
+        cull_mode: None,
+        double_sided: true,
+        ..Default::default()
+    });
+
     let rot_material = materials.add(StandardMaterial {
         base_color: ZINC_400.into(),
         ..Default::default()
@@ -176,8 +188,8 @@ pub(crate) fn create_prisma(
                         Shape,
                         transform,
                     ))
-                    .observe(update_material_on::<Pointer<Over>>(hover_mat.clone()))
-                    .observe(update_material_on::<Pointer<Out>>(standart_mat.clone()));
+                    .observe(on_plane_hover_single::<Pointer<Over>>(hover_mat.clone()))
+                    .observe(on_plane_hover_single::<Pointer<Out>>(standart_mat.clone()));
 
                 // spawn head plane
                 let pos1 = Vec3::new(radius * angle.cos(), side_height, radius * angle.sin());
@@ -208,8 +220,46 @@ pub(crate) fn create_prisma(
                         Shape,
                         Transform::from_translation(mesh_center),
                     ))
-                    .observe(update_material_on::<Pointer<Over>>(hover_mat.clone()))
-                    .observe(update_material_on::<Pointer<Out>>(standart_mat.clone()));
+                    .observe(on_plane_hover_single::<Pointer<Over>>(hover_mat.clone()))
+                    .observe(on_plane_hover_single::<Pointer<Out>>(standart_mat.clone()));
             }
-        });
+        })
+        .observe(on_jurt_hover::<Pointer<Out>>(full_hover_mat));
+}
+
+mod hover {
+    use bevy::prelude::*;
+
+    /// Returns an observer that updates the entity's material to the one specified.
+    pub(crate) fn on_plane_hover_single<E: EntityEvent>(
+        new_material: Handle<StandardMaterial>,
+    ) -> impl Fn(On<E>, Query<&mut MeshMaterial3d<StandardMaterial>>) {
+        move |event, mut query| {
+            if let Ok(mut material) = query.get_mut(event.event_target()) {
+                material.0 = new_material.clone();
+            }
+        }
+    }
+
+    /// Returns an observer that updates the entity's material to the one specified.
+    pub(crate) fn on_jurt_hover<E: EntityEvent>(
+        new_material: Handle<StandardMaterial>,
+    ) -> impl Fn(
+        On<E>,
+        (
+            Query<&Children>,
+            Query<&mut MeshMaterial3d<StandardMaterial>>,
+        ),
+    ) {
+        move |event, query| {
+            let (children, mut materials) = query;
+            if let Ok(children) = children.get(event.event_target()) {
+                children.iter().for_each(|child| {
+                    if let Ok(mut material) = materials.get_mut(child) {
+                        material.0 = new_material.clone();
+                    };
+                });
+            }
+        }
+    }
 }

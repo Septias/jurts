@@ -1,4 +1,3 @@
-use crate::EditingMode;
 use bevy::{
     feathers::{
         controls::{ButtonProps, ButtonVariant, button},
@@ -7,6 +6,11 @@ use bevy::{
     prelude::*,
     ui_widgets::{Activate, observe},
 };
+
+#[derive(Resource, Default)]
+pub struct EditingMode {
+    pub is_editing: bool,
+}
 
 #[allow(unused)]
 #[derive(Component)]
