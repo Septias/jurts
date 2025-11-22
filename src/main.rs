@@ -1,6 +1,6 @@
 use crate::{
     camera_controllers::{CameraController, orbit},
-    meshes::create_prisma,
+    meshes::create_jurt,
     ui::{setup_ui, update_editing_mode_button_text},
 };
 use bevy::{
@@ -66,7 +66,7 @@ fn setup(
     ));
 
     // draw centeroid jurt.
-    create_prisma(
+    create_jurt(
         commands,
         meshes,
         materials,

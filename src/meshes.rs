@@ -11,6 +11,14 @@ use crate::{
     meshes::hover::{on_jurt_hover, on_plane_hover_single},
 };
 
+#[derive(Component)]
+pub struct JurtInstance {
+    corners: Vec<(Vec3, Vec3)>,
+}
+
+#[derive(Component)]
+pub struct Rod;
+
 /// Creates a standard rectangular plane facing the Z axis with pos1 at (0,0,0)
 fn create_standard_rect_plane(width: f32, height: f32) -> Mesh {
     Mesh::new(
@@ -92,16 +100,20 @@ fn create_roof_plane(pos1: Vec3, pos2: Vec3, pos3: Vec3, pos4: Vec3) -> (Mesh, V
 }
 
 /// Spawns a prisma with [num_sides] sides that have a length of [side_length].
-pub(crate) fn create_prisma(
+pub(crate) fn create_jurt(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    num_sides: usize,
-    side_length: f32,
-    side_height: f32,
-    roof_height: f32,
+    blueprint: JurtBlueprint,
     center: Vec3,
 ) {
+    let JurtBlueprint {
+        num_sides,
+        side_length,
+        side_height,
+        roof_height,
+    } = blueprint;
+
     let angle_step = 2.0 * PI / num_sides as f32;
     let radius = side_length / (2.0 * (PI / num_sides as f32).sin());
     let trunk_height = side_height + roof_height + 0.5;
@@ -130,10 +142,29 @@ pub(crate) fn create_prisma(
         base_color: ZINC_400.into(),
         ..Default::default()
     });
+    let sides = (0..num_sides)
+        .map(|i| {
+            let angle = i as f32 * angle_step;
+            let next_angle = ((i + 1) % num_sides) as f32 * angle_step;
+
+            let pos1 = Vec3::new(radius * angle.cos(), 0.0, radius * angle.sin());
+            let pos2 = Vec3::new(radius * next_angle.cos(), 0.0, radius * next_angle.sin());
+            (pos1, pos2, angle, next_angle)
+        })
+        .collect::<Vec<_>>();
 
     // spawn center trunk
     commands
-        .spawn((Transform::from_translation(center),))
+        .spawn((
+            Transform::from_translation(center),
+            Visibility::default(),
+            JurtInstance {
+                corners: sides
+                    .iter()
+                    .map(|(v1, v2, _, _)| (v1.clone(), v2.clone()))
+                    .collect(),
+            },
+        ))
         .with_children(|commands| {
             commands.spawn((
                 Mesh3d(meshes.add(Cylinder::new(0.05, trunk_height))),
@@ -146,13 +177,7 @@ pub(crate) fn create_prisma(
             ));
 
             // spawn planes and side rods
-            for i in 0..num_sides {
-                let angle = i as f32 * angle_step;
-                let next_angle = ((i + 1) % num_sides) as f32 * angle_step;
-
-                let pos1 = Vec3::new(radius * angle.cos(), 0.0, radius * angle.sin());
-                let pos2 = Vec3::new(radius * next_angle.cos(), 0.0, radius * next_angle.sin());
-
+            for (pos1, pos2, angle, next_angle) in &sides {
                 // spawn side rod
                 commands.spawn((
                     Mesh3d(meshes.add(Cylinder::new(0.02, side_height))),
@@ -162,7 +187,7 @@ pub(crate) fn create_prisma(
                 ));
 
                 let plane_center = (pos1 + pos2) / 2.0;
-                let side_length_actual = pos1.distance(pos2);
+                let side_length_actual = pos1.distance(pos2.clone());
 
                 let up = Vec3::Y;
                 let forward = plane_center.normalize(); // Face inward toward center
@@ -224,7 +249,70 @@ pub(crate) fn create_prisma(
                     .observe(on_plane_hover_single::<Pointer<Out>>(standart_mat.clone()));
             }
         })
-        .observe(on_jurt_hover::<Pointer<Out>>(full_hover_mat));
+        .observe(on_jurt_hover::<Pointer<Out>>(standart_mat.clone()))
+        .observe(on_jurt_hover::<Pointer<Over>>(full_hover_mat));
+}
+
+#[derive(Resource)]
+struct JurtBlueprint {
+    num_sides: usize,
+    side_length: f32,
+    side_height: f32,
+    roof_height: f32,
+}
+
+impl Default for JurtBlueprint {
+    fn default() -> Self {
+        Self {
+            num_sides: 8,
+            side_length: 1.65,
+            side_height: 2.,
+            roof_height: 1.0,
+        }
+    }
+}
+
+impl JurtBlueprint {
+    fn with_sides(num_sides: usize) -> Self {
+        Self {
+            num_sides,
+            ..Default::default()
+        }
+    }
+    fn radius(&self) -> f32 {
+        todo!()
+    }
+}
+
+fn get_jurt_center(
+    query: Query<(&Transform, &JurtInstance)>,
+    adding: Res<JurtBlueprint>,
+    pos: Vec2,
+) -> Vec2 {
+    // let best = query.iter().max_by_key(|(trans, jurt)| {
+    //     let best_corner = jurt
+    //         .corners
+    //         .iter()
+    //         .map(|(a, b)| a.xy().distance(pos).max(b.xy().distance(pos)))
+    //         .max_by(|a, b| a.total_cmp(b));
+    //     0
+    // });
+    //
+    let best = (Vec2::default(), Vec2::default(), Entity::PLACEHOLDER);
+    for (trans, jurt) in query.iter() {
+        for (a, b) in jurt.corners.iter() {
+            let center = trans.translation;
+            let (a, b) = (a + center, b + center);
+        }
+    }
+    let hyp = adding.radius();
+
+    let (a, b, _) = best;
+    let middle = (a - b) / 2.0;
+    let opp = (a - middle).length();
+    let adj_len = (hyp * hyp - opp * opp).max(0.0).sqrt();
+    let center = middle + (middle.perp().normalize() * adj_len);
+    center
 }
 
 mod hover {
