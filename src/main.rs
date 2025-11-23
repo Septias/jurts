@@ -1,6 +1,6 @@
 use crate::{
     camera_controllers::{CameraController, orbit},
-    meshes::create_jurt,
+    meshes::{JurtBlueprint, create_jurt},
     ui::{setup_ui, update_editing_mode_button_text},
 };
 use bevy::{
@@ -25,6 +25,7 @@ fn main() {
         ))
         .insert_resource(UiTheme(create_dark_theme()))
         .init_resource::<EditingMode>()
+        .init_resource::<JurtMaterials>()
         .add_systems(Startup, (setup, setup_ui))
         .add_systems(
             Update,
@@ -37,14 +38,54 @@ fn main() {
         .run();
 }
 
-/// A marker component for our shapes so we can query them separately from the ground plane.
-#[derive(Component)]
-struct Shape;
+#[derive(Resource)]
+pub(crate) struct JurtMaterials {
+    plane: Handle<StandardMaterial>,
+    plane_hover: Handle<StandardMaterial>,
+    rot: Handle<StandardMaterial>,
+}
+
+impl FromWorld for JurtMaterials {
+    fn from_world(world: &mut World) -> Self {
+        let materials = world
+            .get_resource_mut::<Assets<StandardMaterial>>()
+            .unwrap();
+        Self::default(materials)
+    }
+}
+impl JurtMaterials {
+    fn default(mut materials: Mut<Assets<StandardMaterial>>) -> Self {
+        let plane = materials.add(StandardMaterial {
+            base_color: SLATE_900.into(),
+            cull_mode: None,
+            double_sided: true,
+            ..Default::default()
+        });
+        let plane_hover = materials.add(StandardMaterial {
+            base_color: SLATE_400.into(),
+            cull_mode: None,
+            double_sided: true,
+            ..Default::default()
+        });
+
+        let rot = materials.add(StandardMaterial {
+            base_color: ZINC_400.into(),
+            ..Default::default()
+        });
+
+        Self {
+            plane,
+            plane_hover,
+            rot,
+        }
+    }
+}
 
 fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    jurt_materials: Res<JurtMaterials>,
 ) {
     commands.spawn((
         Camera3d::default(),
@@ -64,16 +105,20 @@ fn setup(
         },
         Transform::from_xyz(4.0, 10.0, 4.0),
     ));
+    let blueprint = JurtBlueprint {
+        num_sides: 8,
+        side_length: 1.65,
+        side_height: 2.0,
+        roof_height: 1.0,
+    };
 
     // draw centeroid jurt.
     create_jurt(
         commands,
         meshes,
         materials,
-        8,
-        1.65,
-        2.,
-        1.0,
+        jurt_materials,
+        blueprint,
         Vec3::new(2.0, 0.0, 0.0),
     );
 }

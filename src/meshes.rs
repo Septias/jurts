@@ -1,15 +1,18 @@
 use bevy::{
     asset::RenderAssetUsages,
-    color::palettes::tailwind::{RED_700, SLATE_400, SLATE_900, YELLOW_800, ZINC_400},
+    color::palettes::tailwind::YELLOW_800,
     mesh::{Indices, PrimitiveTopology},
     prelude::*,
 };
 use std::f32::consts::PI;
 
 use crate::{
-    Shape,
+    JurtMaterials,
     meshes::hover::{on_jurt_hover, on_plane_hover_single},
 };
+
+#[derive(Component)]
+struct Shape;
 
 #[derive(Component)]
 pub struct JurtInstance {
@@ -18,6 +21,37 @@ pub struct JurtInstance {
 
 #[derive(Component)]
 pub struct Rod;
+
+#[derive(Resource)]
+pub(crate) struct JurtBlueprint {
+    pub(crate) num_sides: usize,
+    pub(crate) side_length: f32,
+    pub(crate) side_height: f32,
+    pub(crate) roof_height: f32,
+}
+
+impl Default for JurtBlueprint {
+    fn default() -> Self {
+        Self {
+            num_sides: 8,
+            side_length: 1.65,
+            side_height: 2.,
+            roof_height: 1.0,
+        }
+    }
+}
+
+impl JurtBlueprint {
+    fn with_sides(num_sides: usize) -> Self {
+        Self {
+            num_sides,
+            ..Default::default()
+        }
+    }
+    fn radius(&self) -> f32 {
+        todo!()
+    }
+}
 
 /// Creates a standard rectangular plane facing the Z axis with pos1 at (0,0,0)
 fn create_standard_rect_plane(width: f32, height: f32) -> Mesh {
@@ -104,6 +138,7 @@ pub(crate) fn create_jurt(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    jurt_materials: Res<JurtMaterials>,
     blueprint: JurtBlueprint,
     center: Vec3,
 ) {
@@ -117,31 +152,13 @@ pub(crate) fn create_jurt(
     let angle_step = 2.0 * PI / num_sides as f32;
     let radius = side_length / (2.0 * (PI / num_sides as f32).sin());
     let trunk_height = side_height + roof_height + 0.5;
-    let hover_mat = materials.add(StandardMaterial {
-        base_color: SLATE_400.into(),
-        cull_mode: None,
-        double_sided: true,
-        ..Default::default()
-    });
 
-    let standart_mat = materials.add(StandardMaterial {
-        base_color: SLATE_900.into(),
-        cull_mode: None,
-        double_sided: true,
-        ..Default::default()
-    });
+    let JurtMaterials {
+        plane: plane_mat,
+        plane_hover,
+        rot: rot_material,
+    } = jurt_materials.into_inner();
 
-    let full_hover_mat = materials.add(StandardMaterial {
-        base_color: RED_700.into(),
-        cull_mode: None,
-        double_sided: true,
-        ..Default::default()
-    });
-
-    let rot_material = materials.add(StandardMaterial {
-        base_color: ZINC_400.into(),
-        ..Default::default()
-    });
     let sides = (0..num_sides)
         .map(|i| {
             let angle = i as f32 * angle_step;
@@ -209,12 +226,12 @@ pub(crate) fn create_jurt(
                         Mesh3d(
                             meshes.add(create_standard_rect_plane(side_length_actual, side_height)),
                         ),
-                        MeshMaterial3d(standart_mat.clone()),
+                        MeshMaterial3d(plane_mat.clone()),
                         Shape,
                         transform,
                     ))
-                    .observe(on_plane_hover_single::<Pointer<Over>>(hover_mat.clone()))
-                    .observe(on_plane_hover_single::<Pointer<Out>>(standart_mat.clone()));
+                    .observe(on_plane_hover_single::<Pointer<Over>>(plane_hover.clone()))
+                    .observe(on_plane_hover_single::<Pointer<Out>>(plane_mat.clone()));
 
                 // spawn head plane
                 let pos1 = Vec3::new(radius * angle.cos(), side_height, radius * angle.sin());
@@ -241,47 +258,16 @@ pub(crate) fn create_jurt(
                 commands
                     .spawn((
                         Mesh3d(meshes.add(roof_mesh)),
-                        MeshMaterial3d(standart_mat.clone()),
+                        MeshMaterial3d(plane_mat.clone()),
                         Shape,
                         Transform::from_translation(mesh_center),
                     ))
-                    .observe(on_plane_hover_single::<Pointer<Over>>(hover_mat.clone()))
-                    .observe(on_plane_hover_single::<Pointer<Out>>(standart_mat.clone()));
+                    .observe(on_plane_hover_single::<Pointer<Over>>(plane_hover.clone()))
+                    .observe(on_plane_hover_single::<Pointer<Out>>(plane_mat.clone()));
             }
         })
-        .observe(on_jurt_hover::<Pointer<Out>>(standart_mat.clone()))
-        .observe(on_jurt_hover::<Pointer<Over>>(full_hover_mat));
-}
-
-#[derive(Resource)]
-struct JurtBlueprint {
-    num_sides: usize,
-    side_length: f32,
-    side_height: f32,
-    roof_height: f32,
-}
-
-impl Default for JurtBlueprint {
-    fn default() -> Self {
-        Self {
-            num_sides: 8,
-            side_length: 1.65,
-            side_height: 2.,
-            roof_height: 1.0,
-        }
-    }
-}
-
-impl JurtBlueprint {
-    fn with_sides(num_sides: usize) -> Self {
-        Self {
-            num_sides,
-            ..Default::default()
-        }
-    }
-    fn radius(&self) -> f32 {
-        todo!()
-    }
+        .observe(on_jurt_hover::<Pointer<Out>>(plane_mat.clone()))
+        .observe(on_jurt_hover::<Pointer<Over>>(plane_hover.clone()));
 }
 
 fn get_jurt_center(
