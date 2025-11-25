@@ -1,3 +1,4 @@
+#![allow(unused)]
 use bevy::{
     feathers::{
         controls::{ButtonProps, ButtonVariant, button},
@@ -29,7 +30,7 @@ pub enum CameraAxis {
 pub struct EditingModeButton;
 
 pub fn setup_ui(mut commands: Commands) {
-    commands.spawn(ui_root());
+    // commands.spawn(ui_root());
 }
 
 pub fn update_editing_mode_button_text(
