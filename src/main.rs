@@ -1,6 +1,6 @@
 use crate::{
     camera_controllers::{CameraController, orbit},
-    meshes::{JurtBlueprint, create_jurt},
+    meshes::{JurtBlueprint, create_jurt, debug_jurt_extension},
     ui::{setup_ui, update_editing_mode_button_text},
 };
 use bevy::{
@@ -26,6 +26,7 @@ fn main() {
         .insert_resource(UiTheme(create_dark_theme()))
         .init_resource::<EditingMode>()
         .init_resource::<JurtMaterials>()
+        .init_resource::<JurtBlueprint>()
         .add_systems(Startup, (setup, setup_ui))
         .add_systems(
             Update,
@@ -33,6 +34,7 @@ fn main() {
                 draw_mesh_intersections,
                 orbit,
                 update_editing_mode_button_text,
+                debug_jurt_extension,
             ),
         )
         .run();

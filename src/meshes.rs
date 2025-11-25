@@ -4,11 +4,12 @@ use bevy::{
     mesh::{Indices, PrimitiveTopology},
     prelude::*,
 };
+use itertools::Itertools;
 use std::f32::consts::PI;
 
 use crate::{
-    JurtMaterials,
     meshes::hover::{on_jurt_hover, on_plane_hover_single},
+    JurtMaterials,
 };
 
 #[derive(Component)]
@@ -16,13 +17,10 @@ struct Shape;
 
 #[derive(Component)]
 pub struct JurtInstance {
-    corners: Vec<(Vec3, Vec3)>,
+    corners: Vec<Vec2>,
 }
 
-#[derive(Component)]
-pub struct Rod;
-
-#[derive(Resource)]
+#[derive(Resource, Clone)]
 pub(crate) struct JurtBlueprint {
     pub(crate) num_sides: usize,
     pub(crate) side_length: f32,
@@ -49,7 +47,7 @@ impl JurtBlueprint {
         }
     }
     fn radius(&self) -> f32 {
-        todo!()
+        10.0
     }
 }
 
@@ -159,14 +157,11 @@ pub(crate) fn create_jurt(
         rot: rot_material,
     } = jurt_materials.into_inner();
 
-    let sides = (0..num_sides)
+    let sides = (0..num_sides + 1)
         .map(|i| {
             let angle = i as f32 * angle_step;
-            let next_angle = ((i + 1) % num_sides) as f32 * angle_step;
-
             let pos1 = Vec3::new(radius * angle.cos(), 0.0, radius * angle.sin());
-            let pos2 = Vec3::new(radius * next_angle.cos(), 0.0, radius * next_angle.sin());
-            (pos1, pos2, angle, next_angle)
+            (pos1, angle)
         })
         .collect::<Vec<_>>();
 
@@ -176,10 +171,7 @@ pub(crate) fn create_jurt(
             Transform::from_translation(center),
             Visibility::default(),
             JurtInstance {
-                corners: sides
-                    .iter()
-                    .map(|(v1, v2, _, _)| (v1.clone(), v2.clone()))
-                    .collect(),
+                corners: sides.iter().map(|(v1, _)| v1.xy()).collect(),
             },
         ))
         .with_children(|commands| {
@@ -194,7 +186,7 @@ pub(crate) fn create_jurt(
             ));
 
             // spawn planes and side rods
-            for (pos1, pos2, angle, next_angle) in &sides {
+            for ((pos1, angle), (pos2, next_angle)) in sides.iter().tuple_windows() {
                 // spawn side rod
                 commands.spawn((
                     Mesh3d(meshes.add(Cylinder::new(0.02, side_height))),
@@ -272,8 +264,11 @@ pub(crate) fn create_jurt(
 
 fn get_jurt_center(
     query: Query<(&Transform, &JurtInstance)>,
-    adding: Res<JurtBlueprint>,
+    adding: &Res<JurtBlueprint>,
     pos: Vec2,
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
 ) -> Vec2 {
     // let best = query.iter().max_by_key(|(trans, jurt)| {
     //     let best_corner = jurt
@@ -284,14 +279,29 @@ fn get_jurt_center(
     //     0
     // });
     //
+    let hyp = adding.radius();
     let best = (Vec2::default(), Vec2::default(), Entity::PLACEHOLDER);
     for (trans, jurt) in query.iter() {
-        for (a, b) in jurt.corners.iter() {
-            let center = trans.translation;
+        for (a, b) in jurt.corners.iter().tuple_windows() {
+            let center = trans.translation.xy();
             let (a, b) = (a + center, b + center);
+            let middle = (a - b) / 2.0;
+            let opp = (a - middle).length();
+            let adj_len = (hyp * hyp - opp * opp).max(0.0).sqrt();
+            let center = middle + (middle.perp().normalize() * adj_len);
+
+            // Add round gizmo to visualize potential jurt center
+            commands.spawn((
+                Mesh3d(meshes.add(Sphere::new(0.03))),
+                MeshMaterial3d(materials.add(StandardMaterial {
+                    base_color: Color::srgb(1.0, 0.0, 0.0),
+                    ..Default::default()
+                })),
+                Transform::from_translation(Vec3::new(center.x, 0.1, center.y)),
+                Shape,
+            ));
         }
     }
-    let hyp = adding.radius();
 
     let (a, b, _) = best;
     let middle = (a - b) / 2.0;
@@ -299,6 +309,27 @@ fn get_jurt_center(
     let adj_len = (hyp * hyp - opp * opp).max(0.0).sqrt();
     let center = middle + (middle.perp().normalize() * adj_len);
     center
+}
+
+pub(crate) fn debug_jurt_extension(
+    mut cursor_events: MessageReader<CursorMoved>,
+    query: Query<(&Transform, &JurtInstance)>,
+    adding: Res<JurtBlueprint>,
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    for event in cursor_events.read() {
+        let pos = event.position;
+        get_jurt_center(
+            query,
+            &adding,
+            pos,
+            &mut commands,
+            &mut meshes,
+            &mut materials,
+        );
+    }
 }
 
 mod hover {
