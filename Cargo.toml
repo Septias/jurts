@@ -13,3 +13,4 @@ opt-level = 3
 
 [dependencies]
 bevy = { version = "0.17", features = ["default", "bevy_dev_tools", "experimental_bevy_feathers"] }
+itertools = "*"

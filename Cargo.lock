@@ -2812,6 +2812,7 @@ name = "jurts"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "itertools 0.13.0",
 ]
 
 [[package]]
