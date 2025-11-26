@@ -1,6 +1,6 @@
 use crate::{
     camera_controllers::{CameraController, orbit},
-    meshes::{JurtBlueprint, create_jurt, debug_jurt_extension},
+    meshes::{JurtBlueprint, create_jurt},
     ui::{setup_ui, update_editing_mode_button_text},
 };
 use bevy::{
@@ -34,7 +34,6 @@ fn main() {
                 draw_mesh_intersections,
                 orbit,
                 update_editing_mode_button_text,
-                debug_jurt_extension,
             ),
         )
         .run();
@@ -121,7 +120,7 @@ fn setup(
         materials,
         jurt_materials,
         blueprint,
-        Vec3::new(2.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 0.0),
     );
 }
 
