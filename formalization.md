@@ -1,12 +1,12 @@
 ## General Idea
-`Jurts` should be a program that makes it easy to brainstorm jurt construction ideas without relying on pen and paper, which I argue is slower and more error prone than a computer assisted design approach. The main benefits are, that you can show what you intend to do with others as well as (later) verify some static properties and generate construction plans. This might but does not have to include Mast and Abspann-pläne. This should enable the scouts community to plan even greater constructions, way beyond what is currently done, and fully unlock the potential of the dynamic jurt-system.
+`Jurts` should be a program that makes it easy to brainstorm jurt construction ideas without relying on pen and paper, which, I argue, is slower and more error prone than a computer assisted design approach. The main benefits are, that you can show what you intend to do with others as well as (later) verify some static properties and generate construction plans. This might but does not have to include Mast and Abspann-pläne. This should enable the scouts community to plan even greater constructions, way beyond what is currently possible, and fully unlock the potential of the dynamic jurt-system.
 
-It should only be possible to create well-formed jurts, because everything else would be nonsensical, regarding the beforementioned goals. We thus continue to create a mathematical model of jurts that inherits these properties and forbids ill-formed constructions.  We start with a 2D version which is later extended to 3D. This model can then be translated easily to a visualization in `bevy`.
+It should only be possible to create well-formed jurts, because everything else would be nonsensical, regarding the aforementioned goals. We thus continue to create a mathematical model of jurts that inherits these properties and forbids ill-formed constructions.  We start with a 2D version which is later extended to 3D. This model can then be translated easily to a visualization in `bevy`.
 
 ## Notation
 - A jurt is any possible tent from this list: `Kote`, `Jurte`, `Groß-Jurte`, `Gigagroß-Jurte` and `Theater-Jurte` even though `Kote` is not a jurt definitionally.
-- We call jurt poles "vertices" and their connecting `sides` edges in the 2D case. For 3D, we still call poles single vertices even though they are defined by two actual vertices. This is because a 3D jurt as i primitive extrusio of the 2D one.
-- A `crown` is the roof-ring of a jurt. It has a hole in the middle for the middle trunk.
+- We call jurt poles "vertices" and their connecting `sides` edges in the 2D case. For 3D, we still call poles single vertices even though they are defined by two actual vertices. This is because a 3D jurt is a primitive extrusion of the 2D one.
+- A `crown` is the roof-ring of a jurt. It has a hole in the middle for the centered trunk.
 
 
 ## Construction of the Model
@@ -24,7 +24,7 @@ A construction is a composite of more than one jurt. We count a single jurt as a
 ## Remark 1: Properties
 To create a sensical model, some properties have to be fulfilled:
 
-1. Roofs are not allowed to intersect any way besides the aforementioned primitive overlap when connecting across two sides. Everything else will create too much overhanging fabric and guy lines (Abspannungen) in nonsensical locations.
+1. Roofs are not allowed to intersect any way besides the aforementioned primitive overlap when connecting across two sides. Everything else will create too much overhanging fabric and guy lines in nonsensical locations.
 2. The area of a construction has to be a _primitive polygon_. This might be relaxed though.
 
 Every construction (also a 0-construction) should provide some derived quantities:
@@ -38,7 +38,7 @@ When adding along sides, the existing construction (A) can compute the possible 
 
 The simples approach to get _valid_ center positions is by iterating every `side` of a construction and acting as if the jurt was added there and adding the derived center to a list. Afer that, the list has to be checked again, since positioning the jurt on any of the centers might create a jurt that overlaps too much with the existing construction and thus violates Property 1.
 
-A second run is thus conducted where the jurt is placed on every possible center c_i. c_i is then filered out depending on whether it overlaps too much with the construction. This is done by checking whether any point of the "outer surface" of the construction (Property 3.) lies too far inside the new jurt (Property 5.a).
+A second run is thus conducted where the jurt is placed on every possible center c_i. c_i is then filtered out depending on whether it overlaps too much with the construction. This is done by checking whether any point of the "outer surface" of the construction (Property 3.) lies too far inside the new jurt (Property 5.a).
 
 Whats left is a list of valid center positions that can be compared to the mouse position to find the closest one. By clicking, the action of adding a jurt is initiated.
 
@@ -77,9 +77,8 @@ When removing a single jurt from a collection, the "merged vertices" have to be 
 # A discrete implementation
 
 ## Implementation Properties
-3. It should create an "outer surface" meaning a distiction between whats "inside" and "outside".
-4. The set V of outer points is ranged over by I, forming vertices v_i, should form a _circular order_. i.e. $v_1 < v_2 < … < v_n < v_1$. Where "<" is a relation stating that the first operand "is left of, or before" the second. This way one can effectively "walk around" the jurt by increasing the index and complete a cicle when every vertex (pole) was visited exactly once. 
-
+1. It should create an "outer surface" meaning a distiction between whats "inside" and "outside".
+2. The set V of outer points is ranged over by I, forming vertices v_i, should form a _circular order_. i.e. $v_1 < v_2 < … < v_n < v_1$. Where "<" is a relation stating that the first operand "is left of, or before" the second. This way one can effectively "walk around" the jurt by increasing the index and complete a cicle when every vertex (pole) was visited exactly once. 
 
 We now try to lay out the general structure of the implementation.
 

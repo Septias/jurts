@@ -1,6 +1,6 @@
 use crate::{
     camera_controllers::{CameraController, orbit},
-    meshes::{JurtBlueprint, create_jurt},
+    tred::meshes::{JurtBlueprint, create_jurt},
     ui::{setup_ui, update_editing_mode_button_text},
 };
 use bevy::{
@@ -11,7 +11,8 @@ use bevy::{
 };
 use ui::EditingMode;
 mod camera_controllers;
-mod meshes;
+mod tred;
+mod twod;
 mod ui;
 
 fn main() {

@@ -7,10 +7,7 @@ use bevy::{
 use itertools::Itertools;
 use std::f32::consts::PI;
 
-use crate::{
-    JurtMaterials,
-    meshes::hover::{on_jurt_hover, on_plane_hover_single},
-};
+use crate::JurtMaterials;
 
 #[derive(Component)]
 struct Shape;
@@ -129,6 +126,41 @@ fn create_roof_plane(pos1: Vec3, pos2: Vec3, pos3: Vec3, pos4: Vec3) -> (Mesh, V
     ]));
 
     (mesh, mesh_center)
+}
+#[allow(unused)]
+pub(crate) fn create_jurt2(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    jurt_materials: Res<JurtMaterials>,
+    blueprint: JurtBlueprint,
+    center: Vec3,
+) {
+    let JurtBlueprint {
+        num_sides,
+        side_length,
+        side_height,
+        roof_height,
+    } = blueprint;
+
+    let JurtMaterials {
+        plane: plane_mat,
+        plane_hover,
+        rot: rot_material,
+    } = jurt_materials.into_inner();
+
+    let removed = (2.0 * PI) * 0.3;
+    let angle_step = (2.0 * PI - removed) / num_sides as f32;
+    let radius = side_length / (2.0 * (PI / num_sides as f32).sin());
+    let trunk_height = side_height + roof_height + 0.5;
+
+    let sides = (0..num_sides + 1)
+        .map(|i| {
+            let angle = i as f32 * angle_step;
+            let pos1 = Vec3::new(radius * angle.cos(), 0.0, radius * angle.sin());
+            (pos1, angle)
+        })
+        .collect::<Vec<_>>();
 }
 
 /// Spawns a prisma with [num_sides] sides that have a length of [side_length].
